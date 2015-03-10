@@ -94,10 +94,30 @@ defmodule Xain do
       require Logger
       import Kernel, except: [div: 2]
       import unquote(__MODULE__)
-      {:ok, _} = start_buffer([])
+      {:ok, _} = start_buffer([[]])
       unquote(block)
       result = render()
       :ok = stop_buffer()
+      case Application.get_env :xain, :after_callback do
+        nil -> 
+          result
+        callback ->   
+          callback.(result)
+      end
+    end
+  end
+
+  defmacro markup(:nested, do: block) do
+    quote location: :keep do
+      require Logger
+      import Kernel, except: [div: 2]
+      import unquote(__MODULE__)
+
+      get_buffer |> Agent.update(&([[] | &1]))
+    
+      unquote(block)
+      result = render
+      get_buffer |> Agent.update(&(tl &1)) 
       case Application.get_env :xain, :after_callback do
         nil -> 
           result
@@ -165,7 +185,11 @@ defmodule Xain do
     :ok
   end
 
-  def put_buffer(buff, content), do: Agent.update(buff, &[content | &1]) 
+  def put_buffer(buff, content) do 
+    Agent.update(buff, fn([head | tail]) -> 
+      [[content | head] | tail] 
+    end) # &[content | &1]) 
+  end
   def put_buffer(content) do
     if :ets.info(:xain) == :undefined do
       raise Xain.NoMarkupError, message: "Must call API inside markup do"
@@ -173,7 +197,9 @@ defmodule Xain do
     get_buffer |> put_buffer(content)
   end
 
-  def render(buff), do: Agent.get(buff, &(&1)) |> Enum.reverse |> Enum.join("") 
+  def render(buff) do 
+    Agent.get(buff, &(hd &1)) |> Enum.reverse |> Enum.join("") 
+  end
   def render do
     get_buffer |> render
   end

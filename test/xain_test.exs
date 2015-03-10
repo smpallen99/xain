@@ -182,4 +182,37 @@ defmodule XainTest do
     assert result == expected
   end
 
+  test "supports nested markups" do
+    markup do 
+      result = markup :nested do
+        div ".second"
+      end
+      assert result == ~s(<div class="second"></div>)
+    end
+  end
+  test "supports nested markups with tags" do
+    result2 = markup do 
+      div ".first"
+      result = markup :nested do
+        div ".second"
+      end
+      assert result == ~s(<div class="second"></div>)
+      span
+    end
+    assert result2 == ~s(<div class="first"></div><span></span>)
+  end
+
+  test "supports nested markups nested in tags" do
+    result2 = markup do 
+      div ".first" do
+        result = markup :nested do
+          div ".second"
+        end
+        assert result == ~s(<div class="second"></div>)
+        span
+      end
+    end
+    assert result2 == ~s(<div class="first"><span></span></div>)
+  end
+
 end
