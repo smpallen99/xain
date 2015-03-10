@@ -38,9 +38,10 @@ defmodule Xain.Helpers do
     {rest, item |> Enum.reverse}
   end
   
-  def id_and_class_shortcuts(contents, attrs) do
+  def id_and_class_shortcuts(contents, attrs) when is_binary(contents) do
     tokenize(contents) |> _id_and_class_shortcuts(attrs)
   end
+  def id_and_class_shortcuts(attrs, _) when is_list(attrs), do: {"", attrs}
 
   defp _id_and_class_shortcuts([], attrs), do: {"", attrs}
 

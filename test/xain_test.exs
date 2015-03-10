@@ -99,6 +99,45 @@ defmodule XainTest do
     assert result == ~s(<input type="text"/>)
   end
 
+  test "self closing with attributes" do
+    result = markup do
+      input([type: :text] ++ [])
+    end
+    assert result == ~s(<input type="text"/>)
+  end
+
+  test "tag with attributes list" do
+    result = markup do
+      div([class: :text] ++ [])
+    end
+    assert result == ~s(<div class="text"></div>)
+  end
+
+  test "tag with attributes list no parenthesis" do
+    result = markup do
+      div [class: :text] ++ []
+    end
+    assert result == ~s(<div class="text"></div>)
+  end
+
+  test "tag with attributes list and do block" do
+    result = markup do
+      div [class: :text] ++ [] do
+        span
+      end
+    end
+    assert result == ~s(<div class="text"><span></span></div>)
+  end
+
+  test "tag with contents attributes list and do block" do
+    result = markup do
+      div "#id", [class: :text] ++ [] do
+        span
+      end
+    end
+    assert result == ~s(<div class="text" id="id"><span></span></div>)
+  end
+
   test "Example form" do
     expected = "<form method=\"post\" action=\"/model\" name=\"form\">" <>
                "<input type=\"text\" id=\"model[name]\" name=\"model_name\" value=\"my name\"/>" <>
