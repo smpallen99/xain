@@ -95,7 +95,11 @@ defmodule Xain do
       import Kernel, except: [div: 2]
       import unquote(__MODULE__)
       {:ok, _} = start_buffer([[]])
-      unquote(block)
+      try do
+        unquote(block)
+      rescue 
+        _ -> Xain.stop_ets
+      end
       result = render()
       :ok = stop_buffer()
       case Application.get_env :xain, :after_callback do
@@ -115,7 +119,11 @@ defmodule Xain do
 
       get_buffer |> Agent.update(&([[] | &1]))
     
-      unquote(block)
+      try do
+        unquote(block)
+      rescue
+        _ -> Xain.stop_ets
+      end
       result = render
       get_buffer |> Agent.update(&(tl &1)) 
       case Application.get_env :xain, :after_callback do
