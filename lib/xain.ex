@@ -98,7 +98,11 @@ defmodule Xain do
       try do
         unquote(block)
       rescue 
-        _ -> Xain.stop_ets
+        exception -> 
+          Xain.stop_ets
+          Logger.error inspect(exception)
+          Logger.error inspect(System.stacktrace)
+          reraise exception, System.stacktrace
       end
       result = render()
       :ok = stop_buffer()
@@ -119,11 +123,7 @@ defmodule Xain do
 
       get_buffer |> Agent.update(&([[] | &1]))
     
-      try do
-        unquote(block)
-      rescue
-        _ -> Xain.stop_ets
-      end
+      unquote(block)
       result = render
       get_buffer |> Agent.update(&(tl &1)) 
       case Application.get_env :xain, :after_callback do
