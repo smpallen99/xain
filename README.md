@@ -27,12 +27,12 @@ Will render the following:
 
 ### Add a call back to transform the returned html 
 
-i.e. Phoenix safe
+i.e. Phoenix raw 
 
 Add the following to your project's config file
 
 ```Elixir 
-config :xain, :after_callback, &Phoenix.HTML.safe/1
+config :xain, :after_callback, {Phoenix.HTML, :raw}
 ```
 
 Will render the above as:

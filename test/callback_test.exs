@@ -5,7 +5,7 @@ defmodule Xain.CallbackTest do
   def callback(output), do: {:safe, output}
 
   test "after callback" do
-    Application.put_env :xain, :after_callback, &__MODULE__.callback/1
+    Application.put_env :xain, :after_callback, {__MODULE__, :callback}
     result = markup  do
       div
     end

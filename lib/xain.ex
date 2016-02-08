@@ -109,8 +109,8 @@ defmodule Xain do
       case Application.get_env :xain, :after_callback do
         nil -> 
           result
-        callback ->   
-          callback.(result)
+        {mod, fun} ->   
+          apply mod, fun, [result]
       end
     end
   end
@@ -129,8 +129,8 @@ defmodule Xain do
       case Application.get_env :xain, :after_callback do
         nil -> 
           result
-        callback ->   
-          callback.(result)
+        {mod, fun} ->   
+          apply mod, fun, [result]
       end
     end
   end
