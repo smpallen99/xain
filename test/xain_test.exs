@@ -135,7 +135,7 @@ defmodule XainTest do
         span
       end
     end
-    assert result == ~s(<div class="text" id="id"><span></span></div>)
+    assert result == ~s(<div id="id" class="text"><span></span></div>)
   end
 
   test "Example form" do
@@ -158,7 +158,7 @@ defmodule XainTest do
     result = markup do
       input(id: 1)
     end
-    assert result  == ~s(<input id="1" type="text"/>)
+    assert result  == ~s(<input type="text" id="1"/>)
   end
 
   test "supports id" do
@@ -179,7 +179,7 @@ defmodule XainTest do
     result = markup do
       div(".cls.two#ids") 
     end
-    assert result == ~s(<div class=\"cls two\" id=\"ids\"></div>)
+    assert result == ~s(<div id=\"ids\" class=\"cls two\"></div>)
   end
 
   test "support class and id attributes" do
