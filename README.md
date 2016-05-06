@@ -19,19 +19,49 @@ end
 
 Will render the following:
 
-```html 
+```html
 <div id="my-id" class="my-class"><span class="bold">Testing</span></div>
 ```
 
-## Configuration 
+## HTML Tag Attributes
 
-### Add a call back to transform the returned html 
+Additional tag attributes can be included in the html tag by passing in key-value pairs.
 
-i.e. Phoenix raw 
+```Elixir
+markup do
+  script src: "http://www.someexamplesite.com/example.js", type: "text/javascript"
+end
+```
+
+Will render:
+
+```html
+<script src="http://www.someexamplesite.com/example.js" type="text/javascript"></script>
+```
+
+Or, with content:
+
+```Elixir
+markup do
+  a "ExampleSite", [name: "example", href: "http://www.someexamplesite.com/"]
+end
+```
+
+Will Render:
+
+```html
+<a name="example" href="http://www.someexamplesite.com/">ExampleSite</a>
+```
+
+## Configuration
+
+### Add a call back to transform the returned html
+
+i.e. Phoenix raw
 
 Add the following to your project's config file
 
-```Elixir 
+```Elixir
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 ```
 
@@ -43,7 +73,7 @@ Will render the above as:
 
 ### Change attribute quoting
 
-To have return markup attributes use single quotes instead of the 
+To have return markup attributes use single quotes instead of the
 default double, add the following to your project's config file.
 
 ```Elixir
@@ -55,14 +85,10 @@ Will render the above as:
 ```html
 <div id='my-id' class='my-class'><span class='bold'>Testing</span></div>
 ```
-## Acknowledgments 
+## Acknowledgments
 
 This work was inspired by Chris McCord's book ["Metaprogramming Elixir"](https://pragprog.com/book/cmelixir/metaprogramming-elixir), and by the ruby project ["Arbre"](https://github.com/activeadmin/arbre)
 
 ## License
 
 xain is Copyright (c) 2015-2016 E-MetroTel
-
-The source code is released under the MIT License.
-
-Check [LICENSE](LICENSE) for more information.
