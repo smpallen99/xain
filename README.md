@@ -23,6 +23,36 @@ Will render the following:
 <div id='my-id' class='my-class'><span class='bold'>Testing</span></div>
 ```
 
+## HTML Tag Attributes
+
+Additional tag attributes can be included in the html tag by passing in key-value pairs.
+
+```Elixir
+markup do
+  script src: "http://www.someexamplesite.com/example.js", type: "text/javascript"
+end
+```
+
+Will render:
+
+```html
+<script src='http://www.someexamplesite.com/example.js' type='text/javascript'></script>
+```
+
+Or, with content:
+
+```Elixir
+markup do
+  a "ExampleSite", [name: "example", href: "http://www.someexamplesite.com/"]
+end
+```
+
+Will Render:
+
+```html
+<a name='example' href='http://www.someexamplesite.com/'>ExampleSite</a>
+```
+
 ## Configuration
 
 ### Add a call back to transform the returned html
@@ -62,7 +92,3 @@ This work was inspired by Chris McCord's book ["Metaprogramming Elixir"](https:/
 ## License
 
 xain is Copyright (c) 2015-2016 E-MetroTel
-
-The source code is released under the MIT License.
-
-Check [LICENSE](LICENSE) for more information.
