@@ -11,11 +11,11 @@ defmodule Xain do
     end
   end
 
-  @quote  Application.get_env :xain, :quote, "\""
+  def quote, do: Application.get_env(:xain, :quote, "'")
 
-  @defaults [ 
-    input: [type: :text], 
-    form: [method: :post], 
+  @defaults [
+    input: [type: :text],
+    form: [method: :post],
     table: [border: 0, cellspacing: 0, cellpadding: 0]
   ]
 
@@ -23,9 +23,9 @@ defmodule Xain do
                          :bdo, :blockquote, :body, :br, :button, :canvas, :caption, :cite,
                          :code, :col, :colgroup, :command, :datalist, :dd, :del, :details,
                          :dfn, :div, :dl, :dt, :em, :embed, :fieldset, :figcaption, :figure,
-                         :footer, :form, :h1, :h2, :h3, :h4, :h5, :h6, :head, :header, :hgroup, 
-                         :hr, :html, :i, :iframe, :img, :input, :ins, :keygen, :kbd, :label, 
-                         :legend, :li, :link, :map, :mark, :menu, :menuitem, :meta, :meter, :nav, :noscript, 
+                         :footer, :form, :h1, :h2, :h3, :h4, :h5, :h6, :head, :header, :hgroup,
+                         :hr, :html, :i, :iframe, :img, :input, :ins, :keygen, :kbd, :label,
+                         :legend, :li, :link, :map, :mark, :menu, :menuitem, :meta, :meter, :nav, :noscript,
                          :object, :ol, :optgroup, :option, :output, :param, :pre, :progress, :q,
                          :s, :samp, :script, :section, :select, :small, :source, :span,
                          :strong, :style, :sub, :summary, :sup, :svg, :table, :tbody, :td,
@@ -36,7 +36,7 @@ defmodule Xain do
 
   @html5_elements [ :p ] ++ @auto_build_elements
 
-  for tag <-@html5_elements -- @self_closing_elements do 
+  for tag <-@html5_elements -- @self_closing_elements do
     defmacro unquote(tag)(contents \\ "", attrs \\ [], inner \\ []) do
       tag = unquote(tag)
       quote location: :keep, do: tag(unquote(tag), unquote(contents), unquote(attrs), unquote(inner), false)
@@ -83,13 +83,13 @@ defmodule Xain do
   end
 
   def open_tag(name, attrs, sc \\ "")
-  def open_tag(name, [], sc), do: "<#{name}#{sc}>" 
+  def open_tag(name, [], sc), do: "<#{name}#{sc}>"
   def open_tag(name, attrs, sc) do
-    attr_html = for {key, val} <- attrs, into: "", do: " #{key}=#{@quote}#{val}#{@quote}"
+    attr_html = for {key, val} <- attrs, into: "", do: " #{key}=#{quote}#{val}#{quote}"
     "<#{name}#{attr_html}#{sc}>"
   end
 
-  defmacro markup(do: block) do 
+  defmacro markup(do: block) do
     quote location: :keep do
       require Logger
       import Kernel, except: [div: 2]
@@ -97,8 +97,8 @@ defmodule Xain do
       {:ok, _} = start_buffer([[]])
       try do
         unquote(block)
-      rescue 
-        exception -> 
+      rescue
+        exception ->
           Xain.stop_ets
           Logger.error inspect(exception)
           Logger.error inspect(System.stacktrace)
@@ -107,9 +107,9 @@ defmodule Xain do
       result = render()
       :ok = stop_buffer()
       case Application.get_env :xain, :after_callback do
-        nil -> 
+        nil ->
           result
-        {mod, fun} ->   
+        {mod, fun} ->
           apply mod, fun, [result]
       end
     end
@@ -122,14 +122,14 @@ defmodule Xain do
       import unquote(__MODULE__)
 
       get_buffer |> Agent.update(&([[] | &1]))
-    
+
       unquote(block)
       result = render
-      get_buffer |> Agent.update(&(tl &1)) 
+      get_buffer |> Agent.update(&(tl &1))
       case Application.get_env :xain, :after_callback do
-        nil -> 
+        nil ->
           result
-        {mod, fun} ->   
+        {mod, fun} ->
           apply mod, fun, [result]
       end
     end
@@ -140,24 +140,24 @@ defmodule Xain do
     unless :ets.info(:xain) == :undefined do
       raise Xain.MarkupNestingError, message: "Cannot nest markup calls"
     else
-      pid = spawn fn -> 
+      pid = spawn fn ->
         :ets.new :xain, [:public, :named_table]
         send my_pid, :ets_done
         receive do
-          {:stop, pid} -> 
+          {:stop, pid} ->
             :ets.delete :xain
             send pid, :done
             :ok
         end
       end
       receive do
-        :ets_done -> 
-          :ets.insert :xain, {:pid, pid}    
+        :ets_done ->
+          :ets.insert :xain, {:pid, pid}
       end
     end
   end
 
-  def stop_ets() do 
+  def stop_ets() do
     :ets.lookup(:xain, :pid)
     |> Keyword.get(:pid)
     |> send({:stop, self})
@@ -166,9 +166,9 @@ defmodule Xain do
 
   defp wait_done do
     receive do
-      :done -> 
+      :done ->
         :ok
-      other -> 
+      other ->
         send self, other
         wait_done
     end
@@ -179,9 +179,9 @@ defmodule Xain do
     |> Keyword.get(:buffer)
   end
 
-  def start_buffer(state) do 
+  def start_buffer(state) do
     start_ets
-    {:ok, pid} = Agent.start_link(fn -> state end) 
+    {:ok, pid} = Agent.start_link(fn -> state end)
     :ets.insert :xain, {:buffer, pid}
     {:ok, pid}
   end
@@ -193,10 +193,10 @@ defmodule Xain do
     :ok
   end
 
-  def put_buffer(buff, content) do 
-    Agent.update(buff, fn([head | tail]) -> 
-      [[content | head] | tail] 
-    end) # &[content | &1]) 
+  def put_buffer(buff, content) do
+    Agent.update(buff, fn([head | tail]) ->
+      [[content | head] | tail]
+    end) # &[content | &1])
   end
   def put_buffer(content) do
     if :ets.info(:xain) == :undefined do
@@ -205,19 +205,19 @@ defmodule Xain do
     get_buffer |> put_buffer(content)
   end
 
-  def render(buff) do 
-    Agent.get(buff, &(hd &1)) |> Enum.reverse |> Enum.join("") 
+  def render(buff) do
+    Agent.get(buff, &(hd &1)) |> Enum.reverse |> Enum.join("")
   end
   def render do
     get_buffer |> render
   end
 
-  defmacro text(string) do 
+  defmacro text(string) do
     quote do: put_buffer(unquote(string))
   end
 
   defmacro raw(string) do
-    quote do 
+    quote do
       str = case unquote(string) do
         string when is_binary(string) -> string
         {:safe, list} -> List.to_string list

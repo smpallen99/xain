@@ -19,43 +19,43 @@ end
 
 Will render the following:
 
-```html 
-<div id="my-id" class="my-class"><span class="bold">Testing</span></div>
+```html
+<div id='my-id' class='my-class'><span class='bold'>Testing</span></div>
 ```
 
-## Configuration 
+## Configuration
 
-### Add a call back to transform the returned html 
+### Add a call back to transform the returned html
 
-i.e. Phoenix raw 
+i.e. Phoenix raw
 
 Add the following to your project's config file
 
-```Elixir 
+```Elixir
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 ```
 
 Will render the above as:
 
 ```Elixir
-{safe, "<div id=\"my-id\" class=\"my-class\"><span class=\"bold\">Testing</span></div>"}
+{safe, "<div id='my-id' class='my-class'><span class='bold'>Testing</span></div>"}
 ```
 
 ### Change attribute quoting
 
-To have return markup attributes use single quotes instead of the 
+To have return markup attributes use single quotes instead of the
 default double, add the following to your project's config file.
 
 ```Elixir
-config :xain, :quote, "'"
+config :xain, :quote, "\""
 ```
 
 Will render the above as:
 
 ```html
-<div id='my-id' class='my-class'><span class='bold'>Testing</span></div>
+<div id="my-id" class="my-class"><span class="bold">Testing</span></div>
 ```
-## Acknowledgments 
+## Acknowledgments
 
 This work was inspired by Chris McCord's book ["Metaprogramming Elixir"](https://pragprog.com/book/cmelixir/metaprogramming-elixir), and by the ruby project ["Arbre"](https://github.com/activeadmin/arbre)
 

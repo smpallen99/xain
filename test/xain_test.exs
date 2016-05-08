@@ -4,6 +4,7 @@ defmodule XainTest do
 
   setup do
     Application.put_env :xain, :after_callout, nil
+    Application.put_env :xain, :quote, "\""
     :ok
   end
 
@@ -269,6 +270,13 @@ defmodule XainTest do
       end
     end
     assert result == ~s(<div class="another"><span>my span</span></div>)
+  end
+  test "supports ' quote" do
+    Application.put_env :xain, :quote, "'"
+    result = markup do
+      div ".test"
+    end
+    assert result == ~s(<div class='test'></div>)
   end
 
 end
