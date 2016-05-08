@@ -2,7 +2,7 @@ defmodule XainTest do
   use ExUnit.Case
   use Xain
 
-  setup do 
+  setup do
     Application.put_env :xain, :after_callout, nil
     :ok
   end
@@ -28,7 +28,7 @@ defmodule XainTest do
       div class: "test"
     end
     assert result == "<div class=\"test\"></div>"
-  end   
+  end
 
   test "attributes with do" do
     result = markup do
@@ -37,11 +37,11 @@ defmodule XainTest do
       end
     end
     assert result == "<div class=\"test\"><span></span></div>"
-  end   
+  end
 
   test "contents" do
     result = markup do
-      div "test" 
+      div "test"
     end
     assert result == "<div>test</div>"
   end
@@ -50,7 +50,7 @@ defmodule XainTest do
     result = markup do
       a href: "/"
     end
-    assert result == ~s(<a href="/"></a>) 
+    assert result == ~s(<a href="/"></a>)
   end
 
 
@@ -67,7 +67,7 @@ defmodule XainTest do
         span "my span"
       end
     end
-    assert result == "<div><span>my span</span></div>" 
+    assert result == "<div><span>my span</span></div>"
   end
 
   test "nests 3 deep" do
@@ -83,7 +83,7 @@ defmodule XainTest do
   end
 
   test "two children" do
-    result = markup do 
+    result = markup do
       div do
         div(id: "one")
         div(id: "two")
@@ -94,7 +94,7 @@ defmodule XainTest do
 
   test "self closing" do
     result = markup do
-      input 
+      input
     end
     assert result == ~s(<input type="text"/>)
   end
@@ -163,21 +163,21 @@ defmodule XainTest do
 
   test "supports id" do
     result = markup do
-      div("#id") 
+      div("#id")
     end
     assert result == ~s(<div id="id"></div>)
   end
 
   test "support single class" do
     result = markup do
-      div(".cls") 
+      div(".cls")
     end
     assert result == ~s(<div class="cls"></div>)
   end
 
   test "support douple class and id" do
     result = markup do
-      div(".cls.two#ids") 
+      div(".cls.two#ids")
     end
     assert result == ~s(<div id=\"ids\" class=\"cls two\"></div>)
   end
@@ -205,8 +205,8 @@ defmodule XainTest do
   end
 
   test "li, label, and input" do
-    expected = "<li class=\"string input optional stringish\" id=\"contact_first_name_input\">" <> 
-    "<label class=\"label\" for=\"contact_first_name\">first_name</label><input type=\"text\" " <> 
+    expected = "<li class=\"string input optional stringish\" id=\"contact_first_name_input\">" <>
+    "<label class=\"label\" for=\"contact_first_name\">first_name</label><input type=\"text\" " <>
     "maxlength=\"255\" id=\"contact_first_name\" name=\"contact[first_name]\" value=\"\"/></li>"
     result = markup do
       model_name = "contact"
@@ -215,14 +215,14 @@ defmodule XainTest do
 
       li( class: "string input optional stringish", id: "#{ext_name}_input") do
         label(".label #{field_name}", for: ext_name)
-        input(type: :text, maxlength: "255", id: ext_name, name: "#{model_name}[#{field_name}]", value: "") 
+        input(type: :text, maxlength: "255", id: ext_name, name: "#{model_name}[#{field_name}]", value: "")
       end
     end
     assert result == expected
   end
 
   test "supports nested markups" do
-    markup do 
+    markup do
       result = markup :nested do
         div ".second"
       end
@@ -230,7 +230,7 @@ defmodule XainTest do
     end
   end
   test "supports nested markups with tags" do
-    result2 = markup do 
+    result2 = markup do
       div ".first"
       result = markup :nested do
         div ".second"
@@ -242,7 +242,7 @@ defmodule XainTest do
   end
 
   test "supports nested markups nested in tags" do
-    result2 = markup do 
+    result2 = markup do
       div ".first" do
         result = markup :nested do
           div ".second"
@@ -252,6 +252,23 @@ defmodule XainTest do
       end
     end
     assert result2 == ~s(<div class="first"><span></span></div>)
+  end
+
+  test "supports raw" do
+    result = markup do
+      div ".test" do
+        raw "<span>myspan</span>"
+      end
+    end
+    assert result == ~s(<div class="test"><span>myspan</span></div>)
+  end
+  test "support raw safe content" do
+    result = markup do
+      div ".another" do
+        raw {:safe, ["<span>", "my span", "</span>"]}
+      end
+    end
+    assert result == ~s(<div class="another"><span>my span</span></div>)
   end
 
 end

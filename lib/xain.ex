@@ -216,6 +216,17 @@ defmodule Xain do
     quote do: put_buffer(unquote(string))
   end
 
+  defmacro raw(string) do
+    quote do 
+      str = case unquote(string) do
+        string when is_binary(string) -> string
+        {:safe, list} -> List.to_string list
+        other -> inspect other
+      end
+      put_buffer(str)
+    end
+  end
+
   def get_defaults(name) do
     Keyword.get(@defaults, name, [])
   end
