@@ -1,7 +1,7 @@
 defmodule Xain.Mixfile do
   use Mix.Project
 
-  @version "0.5.3"
+  @version "0.5.4"
 
   def project do
     [app: :xain,
