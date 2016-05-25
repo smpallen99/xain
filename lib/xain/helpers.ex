@@ -80,7 +80,7 @@ defmodule Xain.Helpers do
   @tag_class_id ~S/(^%|[.#])[-:\w]+/
   @rest         ~S/(.+)/
 
-  @regex        ~r/(?:#{@tag_class_id}|#{@rest})\s*/
+  @regex        ~r/(?:#{@tag_class_id}|#{@rest})\s*/s
 
 
   defp tokenize(string) do
