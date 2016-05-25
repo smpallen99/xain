@@ -20,4 +20,13 @@ defmodule Xain.HelpersTest do
   test "id_and_class_shortcuts #id" do
     assert id_and_class_shortcuts("#test", []) == {"", [id: "test"]}
   end
+
+  test "id_and_class_shortcuts doesn't broke multilines" do
+    str = """
+      line1
+      line2
+      line3
+    """
+    assert id_and_class_shortcuts(str, []) == {str, []}
+  end
 end
