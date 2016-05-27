@@ -11,7 +11,7 @@ defmodule Xain do
     end
   end
 
-  def quote, do: Application.get_env(:xain, :quote, "'")
+  def quote_symbol, do: Application.get_env(:xain, :quote, "'")
 
   @defaults [
     input: [type: :text],
@@ -51,7 +51,64 @@ defmodule Xain do
   end
 
   defmacro tag(name, contents \\ "", attrs \\ [], inner \\ [], sc \\ false) do
-    Xain.build_tag(name, contents, attrs, inner, sc )
+    contents = join_lines(contents)
+    attrs = join_lines(attrs)
+
+    quote location: :keep do
+      name = unquote(name)
+      contents = unquote(contents)
+      sc = unquote(sc)
+      inner = unquote(inner)
+      attrs = unquote(attrs)
+
+      Xain.build_tag(name, contents, attrs, inner, sc)
+    end
+  end
+
+  defp join_lines(ast) do
+    case ast do
+      [do: {:__block__, _, [_]}] ->
+        ast
+      [do: {:__block__, trace, inner_list}] ->
+        [do: {:__block__, trace, handle_inner_list(inner_list)}]
+      _ ->
+        ast
+    end
+  end
+
+  def join(list) do
+    list 
+    |> Enum.map(&item_to_string/1)
+    |> Enum.filter(&(&1))
+    |> Enum.reverse
+    |> Enum.join
+  end
+
+  defp item_to_string(item) when is_list(item) do
+    item |> Enum.map(&item_to_string/1) |> Enum.filter(&(&1)) |> Enum.join
+  end
+  defp item_to_string(item) when is_binary(item) do
+    item
+  end
+  defp item_to_string(_) do
+    false
+  end
+
+  defp handle_inner_list(list, acc \\ [])
+  defp handle_inner_list([], acc) do
+    quoted_join = {{:., [], [{:__aliases__, [alias: false], [:Xain]}, :join]}, [], [{:xain_buffer, [], Elixir}]}
+    acc = [quoted_join | acc]
+    acc = Enum.reverse(acc)
+    [{:=, [], [{:xain_buffer, [], Elixir}, []]} | acc]
+  end
+  defp handle_inner_list([line|tail], acc) do
+    case line do
+      {:=, _, _} ->
+        handle_inner_list(tail, [line | acc])
+      _ ->
+        line = {:=, [], [{:xain_buffer, [], Elixir}, [{:|, [], [line, {:xain_buffer, [], Elixir}]}]]}
+        handle_inner_list(tail, [line | acc])
+    end
   end
 
   def build_tag(name, contents, attrs, _inner, sc) when is_list(contents) do
@@ -61,51 +118,42 @@ defmodule Xain do
     {inner, [contents, attrs]} = extract_do_block(contents, attrs, inner)
     sc_str = if sc, do: "/", else: ""
 
-    quote location: :keep do
-      name = unquote(name)
-      contents = unquote(contents)
-      sc_str = unquote(sc_str)
-      sc = unquote(sc)
-      attrs = unquote(attrs)
+    attrs = attrs |> set_defaults(name)
+    {contents, attrs} = id_and_class_shortcuts(contents, attrs)
 
-      attrs = attrs |> set_defaults(name)
-      {contents, attrs} = id_and_class_shortcuts(contents, attrs)
+    result = Xain.open_tag(name, attrs, sc_str) 
+    result = result <> contents <> Enum.join(inner)
 
-      #put_buffer var!(buffer, Xain), open_tag(unquote_splicing([name, attrs, sc_str]))
-      put_buffer open_tag(name, attrs, sc_str)
-      text(contents)
-      unquote(inner)
-
-      if not sc do
-        put_buffer "</#{unquote(name)}>"
-      end
-    end
+    if not sc do
+      result <> "</#{name}>"
+    else
+      result
+    end   
   end
 
   def open_tag(name, attrs, sc \\ "")
   def open_tag(name, [], sc), do: "<#{name}#{sc}>"
   def open_tag(name, attrs, sc) do
-    attr_html = for {key, val} <- attrs, into: "", do: " #{key}=#{quote}#{val}#{quote}"
+    attr_html = for {key, val} <- attrs, into: "", do: " #{key}=#{quote_symbol}#{val}#{quote_symbol}"
     "<#{name}#{attr_html}#{sc}>"
   end
 
   defmacro markup(do: block) do
+    [do: block] = join_lines([do: block])
     quote location: :keep do
       require Logger
       import Kernel, except: [div: 2]
       import unquote(__MODULE__)
-      {:ok, _} = start_buffer([[]])
-      try do
+
+      result = try do
         unquote(block)
       rescue
         exception ->
-          Xain.stop_ets
           Logger.error inspect(exception)
           Logger.error inspect(System.stacktrace)
           reraise exception, System.stacktrace
       end
-      result = render()
-      :ok = stop_buffer()
+ 
       case Application.get_env :xain, :after_callback do
         nil ->
           result
@@ -116,16 +164,14 @@ defmodule Xain do
   end
 
   defmacro markup(:nested, do: block) do
+    [do: block] = join_lines([do: block])
     quote location: :keep do
       require Logger
       import Kernel, except: [div: 2]
       import unquote(__MODULE__)
 
-      get_buffer |> Agent.update(&([[] | &1]))
-
-      unquote(block)
-      result = render
-      get_buffer |> Agent.update(&(tl &1))
+      result = unquote(block)
+      
       case Application.get_env :xain, :after_callback do
         nil ->
           result
@@ -135,85 +181,9 @@ defmodule Xain do
     end
   end
 
-  def start_ets() do
-    my_pid = self
-    unless :ets.info(:xain) == :undefined do
-      raise Xain.MarkupNestingError, message: "Cannot nest markup calls"
-    else
-      pid = spawn fn ->
-        :ets.new :xain, [:public, :named_table]
-        send my_pid, :ets_done
-        receive do
-          {:stop, pid} ->
-            :ets.delete :xain
-            send pid, :done
-            :ok
-        end
-      end
-      receive do
-        :ets_done ->
-          :ets.insert :xain, {:pid, pid}
-      end
-    end
-  end
-
-  def stop_ets() do
-    :ets.lookup(:xain, :pid)
-    |> Keyword.get(:pid)
-    |> send({:stop, self})
-    wait_done
-  end
-
-  defp wait_done do
-    receive do
-      :done ->
-        :ok
-      other ->
-        send self, other
-        wait_done
-    end
-  end
-
-  def get_buffer() do
-    :ets.lookup(:xain, :buffer)
-    |> Keyword.get(:buffer)
-  end
-
-  def start_buffer(state) do
-    start_ets
-    {:ok, pid} = Agent.start_link(fn -> state end)
-    :ets.insert :xain, {:buffer, pid}
-    {:ok, pid}
-  end
-
-  def stop_buffer(buff), do: Agent.stop(buff)
-  def stop_buffer do
-    get_buffer |> stop_buffer
-    stop_ets
-    :ok
-  end
-
-  def put_buffer(buff, content) do
-    Agent.update(buff, fn([head | tail]) ->
-      [[content | head] | tail]
-    end) # &[content | &1])
-  end
-  def put_buffer(content) do
-    if :ets.info(:xain) == :undefined do
-      raise Xain.NoMarkupError, message: "Must call API inside markup do"
-    end
-    get_buffer |> put_buffer(content)
-  end
-
-  def render(buff) do
-    Agent.get(buff, &(hd &1)) |> Enum.reverse |> Enum.join("")
-  end
-  def render do
-    get_buffer |> render
-  end
 
   defmacro text(string) do
-    quote do: put_buffer(unquote(string))
+    quote do: unquote(string)
   end
 
   defmacro raw(string) do
@@ -223,7 +193,6 @@ defmodule Xain do
         {:safe, list} -> List.to_string list
         other -> inspect other
       end
-      put_buffer(str)
     end
   end
 
