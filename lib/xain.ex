@@ -119,6 +119,7 @@ defmodule Xain do
     sc_str = if sc, do: "/", else: ""
 
     attrs = attrs |> set_defaults(name)
+    contents = ensure_valid_contents(contents, name)
     {contents, attrs} = id_and_class_shortcuts(contents, attrs)
 
     result = Xain.open_tag(name, attrs, sc_str) 
