@@ -1,5 +1,6 @@
 defmodule Xain.HelpersTest do
   use ExUnit.Case
+  import Xain.Case
   import Xain.Helpers
 
 
@@ -28,5 +29,38 @@ defmodule Xain.HelpersTest do
       line3
     """
     assert id_and_class_shortcuts(str, []) == {str, []}
+  end
+
+  test "ensure_valid_contents doesn't affect binaries and lists" do
+    assert ensure_valid_contents("test", :p) == "test"
+    assert ensure_valid_contents('test', :p) == 'test'
+    assert ensure_valid_contents(["1", "2", "3"], :p) == ["1", "2", "3"]
+  end
+
+  @log_msg "the first argument supposed to be a binary"
+  test "ensure_valid_contents calls to_string for numbers, booleans and atoms" do
+    assert capture_log(fn ->
+      assert ensure_valid_contents(:test, :p) == "test"
+    end) =~ @log_msg
+    assert capture_log(fn ->
+      assert ensure_valid_contents(1, :p) == "1"
+    end) =~ @log_msg
+    assert capture_log(fn ->
+      assert ensure_valid_contents(3.14, :p) == "3.14"
+    end) =~ @log_msg
+    assert capture_log(fn ->
+      assert ensure_valid_contents(nil, :p) == ""
+    end) =~ @log_msg
+    assert capture_log(fn ->
+      assert ensure_valid_contents(true, :p) == "true"
+    end) =~ @log_msg
+  end
+
+  test "ensure_valid_contents raises error if String.Chars is not implemented for the first argument" do
+    assert capture_log(fn ->
+      assert_raise Protocol.UndefinedError, "protocol String.Chars not implemented for %{}", fn ->
+        ensure_valid_contents(%{}, :p)
+      end
+    end) =~ @log_msg
   end
 end

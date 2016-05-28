@@ -42,13 +42,9 @@ defmodule Xain.Helpers do
   def ensure_valid_contents(contents, _) when is_binary(contents) or is_list(contents) do
     contents
   end
-  def ensure_valid_contents(contents, tag_name) when is_number(contents) or is_atom(contents) do
+  def ensure_valid_contents(contents, tag_name) do
     Logger.debug "#{tag_name} has been called as #{tag_name}(#{inspect(contents)}, ...), but the first argument supposed to be a binary"
     to_string(contents)
-  end
-  def ensure_valid_contents(contents, tag_name) do
-    Logger.warn "#{tag_name} has been called as #{tag_name}(#{inspect(contents)}, ...), but the first argument supposed to be a binary"
-    inspect(contents)
   end
   
   def id_and_class_shortcuts(contents, attrs) when is_binary(contents) do
