@@ -1,41 +1,12 @@
 defmodule Xain.Helpers do
-  
-  def extract_do_block(item) when is_list(item) do
-    if Keyword.get(item, :do, nil) do
-      block = case Keyword.get item, :do do
-        block when is_list(block) -> block
-        other -> [other]
-      end
-      {Keyword.delete(item, :do), block}
-    else
-      {item, []}
-    end
-  end
-  def extract_do_block(other), do: {other, []}
+  require Logger
 
-  def extract_do_block(contents, attributes, block) do
-    {children, list} = [contents, attributes, block] 
-    |> Enum.reduce({[],[]}, fn(item, {block_list, items}) -> 
-      {entry, children} = extract_do_block(item)
-      {block_list ++ children, [entry | items]}
-    end)
-    {children, Enum.reverse(list) |> Enum.take(2)}
+  def ensure_valid_contents(contents, _) when is_binary(contents) or is_list(contents) do
+    contents
   end
-
-  def push!([], item) do
-    [item]
-  end
-
-  def push!([top | rest], item) do
-    [[item | top] | rest]
-  end
-
-  def push_level!(buffer) do
-    [[] | buffer]
-  end
-
-  def pop!([item | rest]) do
-    {rest, item |> Enum.reverse}
+  def ensure_valid_contents(contents, tag_name) do
+    Logger.debug "#{tag_name} has been called as #{tag_name}(#{inspect(contents)}, ...), but the first argument supposed to be a binary"
+    to_string(contents)
   end
   
   def id_and_class_shortcuts(contents, attrs) when is_binary(contents) do

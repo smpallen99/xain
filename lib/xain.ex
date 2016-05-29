@@ -36,41 +36,42 @@ defmodule Xain do
 
   @html5_elements [ :p ] ++ @auto_build_elements
 
-  for tag <-@html5_elements -- @self_closing_elements do
-    defmacro unquote(tag)(contents \\ "", attrs \\ [], inner \\ []) do
+  for tag <- @html5_elements -- @self_closing_elements do
+    defmacro unquote(tag)(contents \\ "", attrs \\ nil, inner \\ nil) do
       tag = unquote(tag)
       quote location: :keep, do: tag(unquote(tag), unquote(contents), unquote(attrs), unquote(inner), false)
     end
   end
-
+  
   for tag <- @self_closing_elements do
-    defmacro unquote(tag)(contents \\ "", attrs \\ [], inner \\ []) do
+    defmacro unquote(tag)(contents \\ "", attrs \\ nil, inner \\ nil) do
       tag = unquote(tag)
       quote location: :keep, do: tag(unquote(tag), unquote(contents), unquote(attrs), unquote(inner), true)
     end
   end
 
-  defmacro tag(name, contents \\ "", attrs \\ [], inner \\ [], sc \\ false) do
-    contents = join_lines(contents)
-    attrs = join_lines(attrs)
+  defmacro tag(name, inline_content \\ "", attrs \\ nil, inner_block \\ nil, sc \\ false) do
+    {inline_content, attrs, inner_content} = prepare_args(inline_content, attrs, inner_block)
+    inner_content = join_lines(inner_content)
 
-    quote location: :keep do
-      name = unquote(name)
-      contents = unquote(contents)
-      sc = unquote(sc)
-      inner = unquote(inner)
-      attrs = unquote(attrs)
-
-      Xain.build_tag(name, contents, attrs, inner, sc)
+    quote bind_quoted: [name: name, inline_content: inline_content, attrs: attrs, inner_content: inner_content, sc: sc], location: :keep do
+      Xain.build_tag(name, inline_content, attrs, inner_content, sc)
     end
   end
 
+  defp prepare_args([do: inner_content], nil, nil), do: {"", [], inner_content}
+  defp prepare_args(attrs, [do: inner_content], nil) when is_list(attrs) or is_tuple(attrs), do: {"", attrs, inner_content}
+  defp prepare_args(content, [do: inner_content], nil), do: {content, [], inner_content}
+  defp prepare_args(content, attrs, [do: inner_content]), do: {content, attrs, inner_content}
+  defp prepare_args(attrs, nil, nil) when is_list(attrs), do: {"", attrs, []}
+  defp prepare_args(content, attrs, nil), do: {content, attrs || [], []}
+
   defp join_lines(ast) do
     case ast do
-      [do: {:__block__, _, [_]}] ->
+      {:__block__, _, [_]} ->
         ast
-      [do: {:__block__, trace, inner_list}] ->
-        [do: {:__block__, trace, handle_inner_list(inner_list)}]
+      {:__block__, trace, inner_list} ->
+        {:__block__, trace, handle_inner_list(inner_list)}
       _ ->
         ast
     end
@@ -111,35 +112,43 @@ defmodule Xain do
     end
   end
 
-  def build_tag(name, contents, attrs, _inner, sc) when is_list(contents) do
-    build_tag(name, "", contents, attrs, sc)
+  def build_tag(name, attrs, _, _, sc) when is_list(attrs) do
+    build_tag(name, "", attrs, "", sc)
   end
-  def build_tag(name, contents, attrs, inner, sc) do
-    {inner, [contents, attrs]} = extract_do_block(contents, attrs, inner)
-    sc_str = if sc, do: "/", else: ""
-
-    attrs = attrs |> set_defaults(name)
-    {contents, attrs} = id_and_class_shortcuts(contents, attrs)
-
-    result = Xain.open_tag(name, attrs, sc_str) 
-    result = result <> contents <> Enum.join(inner)
-
-    if not sc do
-      result <> "</#{name}>"
-    else
-      result
-    end   
+  def build_tag(name, inline_content, attrs, inner, sc) do
+    inline_content
+    |> ensure_valid_contents(name)
+    |> merge_attrs(attrs, name)
+    |> merge_content(inner)
+    |> wrap_in_tags(name, sc)  
   end
 
-  def open_tag(name, attrs, sc \\ "")
-  def open_tag(name, [], sc), do: "<#{name}#{sc}>"
-  def open_tag(name, attrs, sc) do
-    attr_html = for {key, val} <- attrs, into: "", do: " #{key}=#{quote_symbol}#{val}#{quote_symbol}"
-    "<#{name}#{attr_html}#{sc}>"
+  
+  defp merge_attrs(content, attrs, tag_name) do
+    attrs = attrs |> set_defaults(tag_name)
+    {content, attrs} = id_and_class_shortcuts(content, attrs)
+    attrs_html = for {key, val} <- attrs, into: "", do: " #{key}=#{quote_symbol}#{val}#{quote_symbol}"
+    {content, attrs_html}
   end
+
+  defp merge_content({inline_content, attrs_html}, inner) do
+    inner_content = cond do
+      is_list(inner) -> Enum.join(inner)
+      true -> inner
+    end
+    {inline_content <> inner_content, attrs_html}
+  end
+
+  defp wrap_in_tags({_content, attrs_html}, name, true) do
+    "<#{name}#{attrs_html}/>"
+  end
+  defp wrap_in_tags({content, attrs_html}, name, false) do
+    "<#{name}#{attrs_html}>#{content}</#{name}>"
+  end
+
 
   defmacro markup(do: block) do
-    [do: block] = join_lines([do: block])
+    block = join_lines(block)
     quote location: :keep do
       require Logger
       import Kernel, except: [div: 2]
@@ -164,26 +173,14 @@ defmodule Xain do
   end
 
   defmacro markup(:nested, do: block) do
-    [do: block] = join_lines([do: block])
     quote location: :keep do
-      require Logger
-      import Kernel, except: [div: 2]
-      import unquote(__MODULE__)
-
-      result = unquote(block)
-      
-      case Application.get_env :xain, :after_callback do
-        nil ->
-          result
-        {mod, fun} ->
-          apply mod, fun, [result]
-      end
+      markup(do: unquote(block))
     end
   end
 
 
   defmacro text(string) do
-    quote do: unquote(string)
+    quote do: to_string(unquote(string))
   end
 
   defmacro raw(string) do
@@ -196,11 +193,11 @@ defmodule Xain do
     end
   end
 
-  def get_defaults(name) do
+  defp get_defaults(name) do
     Keyword.get(@defaults, name, [])
   end
 
-  def set_defaults(attrs, name) do
+  defp set_defaults(attrs, name) do
     Keyword.merge(get_defaults(name), attrs)
   end
 end
