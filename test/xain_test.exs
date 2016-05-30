@@ -286,4 +286,16 @@ defmodule XainTest do
     end
     assert result == ~s(<th class="sortable th-id"><a href="#test">Id</a></th>)
   end
+
+  test "doesn't fail with invalid inner block" do
+    result = div do
+      nil
+    end
+    assert result == ~s(<div></div>)
+
+    result = div do
+      :ok
+    end
+    assert result == ~s(<div></div>)
+  end
 end
