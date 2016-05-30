@@ -66,8 +66,6 @@ defmodule Xain do
 
   defp join_lines(ast) do
     case ast do
-      {:__block__, _, [_]} ->
-        ast
       {:__block__, trace, inner_list} ->
         {:__block__, trace, handle_inner_list(inner_list)}
       _ ->
@@ -132,7 +130,8 @@ defmodule Xain do
   defp merge_content({inline_content, attrs_html}, inner) do
     inner_content = cond do
       is_list(inner) -> Enum.join(inner)
-      true -> inner
+      is_binary(inner) -> inner
+      true -> ""
     end
     {inline_content <> inner_content, attrs_html}
   end
