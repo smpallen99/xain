@@ -284,6 +284,6 @@ defmodule XainTest do
     result = th(".sortable.th-#{field_name}") do
       a "Id", href: "#test"
     end
-    assert result = ~s(<th class="one two-2"><a href="#test">Id</a></th>)
+    assert result == ~s(<th class="sortable th-id"><a href="#test">Id</a></th>)
   end
 end
