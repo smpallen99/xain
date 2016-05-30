@@ -279,4 +279,11 @@ defmodule XainTest do
     assert result == ~s(<div class='test'></div>)
   end
 
+  test ".class with nested element" do
+    field_name = "id"
+    result = th(".sortable.th-#{field_name}") do
+      a "Id", href: "#test"
+    end
+    assert result = ~s(<th class="one two-2"><a href="#test">Id</a></th>)
+  end
 end

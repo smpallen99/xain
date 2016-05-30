@@ -60,10 +60,8 @@ defmodule Xain do
   end
 
   defp prepare_args([do: inner_content], nil, nil), do: {"", [], inner_content}
-  defp prepare_args(attrs, [do: inner_content], nil) when is_list(attrs) or is_tuple(attrs), do: {"", attrs, inner_content}
   defp prepare_args(content, [do: inner_content], nil), do: {content, [], inner_content}
   defp prepare_args(content, attrs, [do: inner_content]), do: {content, attrs, inner_content}
-  defp prepare_args(attrs, nil, nil) when is_list(attrs), do: {"", attrs, []}
   defp prepare_args(content, attrs, nil), do: {content, attrs || [], []}
 
   defp join_lines(ast) do
@@ -112,8 +110,8 @@ defmodule Xain do
     end
   end
 
-  def build_tag(name, attrs, _, _, sc) when is_list(attrs) do
-    build_tag(name, "", attrs, "", sc)
+  def build_tag(name, attrs, _, inner, sc) when is_list(attrs) do
+    build_tag(name, "", attrs, inner, sc)
   end
   def build_tag(name, inline_content, attrs, inner, sc) do
     inline_content
