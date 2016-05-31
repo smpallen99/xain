@@ -42,7 +42,7 @@ defmodule Xain do
       quote location: :keep, do: tag(unquote(tag), unquote(contents), unquote(attrs), unquote(inner), false)
     end
   end
-  
+
   for tag <- @self_closing_elements do
     defmacro unquote(tag)(contents \\ "", attrs \\ nil, inner \\ nil) do
       tag = unquote(tag)
@@ -74,7 +74,7 @@ defmodule Xain do
   end
 
   def join(list) do
-    list 
+    list
     |> Enum.map(&item_to_string/1)
     |> Enum.filter(&(&1))
     |> Enum.reverse
@@ -116,10 +116,10 @@ defmodule Xain do
     |> ensure_valid_contents(name)
     |> merge_attrs(attrs, name)
     |> merge_content(inner)
-    |> wrap_in_tags(name, sc)  
+    |> wrap_in_tags(name, sc)
   end
 
-  
+
   defp merge_attrs(content, attrs, tag_name) do
     attrs = attrs |> set_defaults(tag_name)
     {content, attrs} = id_and_class_shortcuts(content, attrs)
@@ -144,12 +144,19 @@ defmodule Xain do
   end
 
 
-  defmacro markup(do: block) do
+  defmacro markup(opts \\ [], block)
+  defmacro markup(:nested, do: block) do
+    quote location: :keep do
+      markup([safe: true], do: unquote(block))
+    end
+  end
+  defmacro markup(opts, do: block) do
     block = join_lines(block)
     quote location: :keep do
       require Logger
       import Kernel, except: [div: 2]
       import unquote(__MODULE__)
+      opts = unquote(opts)
 
       result = try do
         unquote(block)
@@ -159,22 +166,18 @@ defmodule Xain do
           Logger.error inspect(System.stacktrace)
           reraise exception, System.stacktrace
       end
- 
-      case Application.get_env :xain, :after_callback do
-        nil ->
-          result
-        {mod, fun} ->
-          apply mod, fun, [result]
+      if opts[:safe] do
+        case Application.get_env :xain, :after_callback do
+          nil ->
+            result
+          {mod, fun} ->
+            apply mod, fun, [result]
+        end
+      else
+        result
       end
     end
   end
-
-  defmacro markup(:nested, do: block) do
-    quote location: :keep do
-      markup(do: unquote(block))
-    end
-  end
-
 
   defmacro text(string) do
     quote do: to_string(unquote(string))
@@ -185,7 +188,7 @@ defmodule Xain do
       str = case unquote(string) do
         string when is_binary(string) -> string
         {:safe, list} -> List.to_string list
-        other -> inspect other
+        other -> to_string other
       end
     end
   end

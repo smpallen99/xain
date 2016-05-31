@@ -65,6 +65,14 @@ Add the following to your project's config file
 config :xain, :after_callback, {Phoenix.HTML, :raw}
 ```
 
+```Elixir
+  markup safe: true do
+    div ("#my-id.my-class") do
+      span ".bold Testing"
+    end
+  end
+```
+
 Will render the above as:
 
 ```Elixir
