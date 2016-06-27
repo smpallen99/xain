@@ -1,7 +1,7 @@
 defmodule Xain.Mixfile do
   use Mix.Project
 
-  @version "0.5.4"
+  @version "0.6.0"
 
   def project do
     [app: :xain,
@@ -20,7 +20,7 @@ defmodule Xain.Mixfile do
   end
 
   defp package do
-    [ maintainers: ["Stephen Pallen"],
+    [ maintainers: ["Stephen Pallen", "Roman Smirnov"],
       licenses: ["MIT"],
       links: %{ "Github" => "https://github.com/smpallen99/xain"},
       files: ~w(lib README.md mix.exs LICENSE)]
