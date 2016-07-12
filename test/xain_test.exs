@@ -298,4 +298,16 @@ defmodule XainTest do
     end
     assert result == ~s(<div></div>)
   end
+
+  test "escapes html entities in attributes" do
+    result = div title: "\"hello\""
+    assert result == ~s(<div title="&quot;hello&quot;"></div>)
+  end
+  test "escapes html entities in text" do
+    result = div do
+      text "<hello>"
+      b "world"
+    end
+    assert result == ~s(<div>&lt;hello&gt;<b>world</b></div>)
+  end
 end

@@ -123,7 +123,7 @@ defmodule Xain do
   defp merge_attrs(content, attrs, tag_name) do
     attrs = attrs |> set_defaults(tag_name)
     {content, attrs} = id_and_class_shortcuts(content, attrs)
-    attrs_html = for {key, val} <- attrs, into: "", do: " #{key}=#{quote_symbol}#{val}#{quote_symbol}"
+    attrs_html = for {key, val} <- attrs, into: "", do: " #{key}=#{quote_symbol}#{html_escape(val)}#{quote_symbol}"
     {content, attrs_html}
   end
 
@@ -180,7 +180,7 @@ defmodule Xain do
   end
 
   defmacro text(string) do
-    quote do: to_string(unquote(string))
+    quote do: to_string(unquote(html_escape(string)))
   end
 
   defmacro raw(string) do
@@ -199,5 +199,23 @@ defmodule Xain do
 
   defp set_defaults(attrs, name) do
     Keyword.merge(get_defaults(name), attrs)
+  end
+
+  defp html_escape(html) do
+    if is_binary(html) do
+      for <<char <- html>>, do: html_entity(char)
+    else
+      html
+    end
+  end
+
+  defp html_entity(char) do
+    case char do
+      ?< -> "&lt;"
+      ?> -> "&gt;"
+      ?" -> "&quot;"
+      ?' -> "&apos;"
+      _ -> <<char>>
+    end
   end
 end
