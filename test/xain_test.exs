@@ -298,4 +298,18 @@ defmodule XainTest do
     end
     assert result == ~s(<div></div>)
   end
+
+  test "text area with # in value" do
+    result = textarea("#hello",
+     [class: "form-control", id: "contact_first_name", name: "contact[first_name]", type: :text])
+    expected = "<textarea class=\"form-control\" id=\"contact_first_name\" name=\"contact[first_name]\" type=\"text\">#value</textarea>"
+    assert result == expected
+  end
+
+  test "text area with . in value" do
+    result = textarea(".hello",
+     [class: "form-control", id: "contact_first_name", name: "contact[first_name]", type: :text])
+    expected = "<textarea class=\"form-control\" id=\"contact_first_name\" name=\"contact[first_name]\" type=\"text\">.hello</textarea>"
+    assert result == expected
+  end
 end
