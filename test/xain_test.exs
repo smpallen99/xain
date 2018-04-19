@@ -10,7 +10,7 @@ defmodule XainTest do
 
   test "simple div" do
     result = markup do
-      div
+      div()
     end
     assert result == "<div></div>"
   end
@@ -18,7 +18,7 @@ defmodule XainTest do
   test "nesting div span" do
     result = markup do
       div do
-        span
+        span()
       end
     end
     assert result == "<div><span></span></div>"
@@ -34,7 +34,7 @@ defmodule XainTest do
   test "attributes with do" do
     result = markup do
       div class: "test" do
-        span
+        span()
       end
     end
     assert result == "<div class=\"test\"><span></span></div>"
@@ -95,7 +95,7 @@ defmodule XainTest do
 
   test "self closing" do
     result = markup do
-      input
+      input()
     end
     assert result == ~s(<input type="text"/>)
   end
@@ -124,7 +124,7 @@ defmodule XainTest do
   test "tag with attributes list and do block" do
     result = markup do
       div [class: :text] ++ [] do
-        span
+        span()
       end
     end
     assert result == ~s(<div class="text"><span></span></div>)
@@ -133,7 +133,7 @@ defmodule XainTest do
   test "tag with contents attributes list and do block" do
     result = markup do
       div "#id", [class: :text] ++ [] do
-        span
+        span()
       end
     end
     assert result == ~s(<div id="id" class="text"><span></span></div>)
@@ -237,7 +237,7 @@ defmodule XainTest do
         div ".second"
       end
       assert result == ~s(<div class="second"></div>)
-      span
+      span()
     end
     assert result2 == ~s(<div class="first"></div><span></span>)
   end
@@ -249,7 +249,7 @@ defmodule XainTest do
           div ".second"
         end
         assert result == ~s(<div class="second"></div>)
-        span
+        span()
       end
     end
     assert result2 == ~s(<div class="first"><span></span></div>)

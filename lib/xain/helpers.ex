@@ -8,7 +8,7 @@ defmodule Xain.Helpers do
     Logger.debug "#{tag_name} has been called as #{tag_name}(#{inspect(contents)}, ...), but the first argument supposed to be a binary"
     to_string(contents)
   end
-  
+
   def id_and_class_shortcuts(contents, attrs) when is_binary(contents) do
     tokenize(contents) |> _id_and_class_shortcuts(attrs)
   end
@@ -18,19 +18,19 @@ defmodule Xain.Helpers do
 
   defp _id_and_class_shortcuts([h | t], attrs) do
     case h do
-      "#" <> id -> 
-        id = String.strip(id)
+      "#" <> id ->
+        id = String.trim(id)
         _id_and_class_shortcuts(t, merge_id_or_class(:id, id, attrs))
-        
-      "." <> class -> 
-        class = String.strip(class)
+
+      "." <> class ->
+        class = String.trim(class)
         _id_and_class_shortcuts(t, merge_id_or_class(:class, class, attrs))
 
-      # "%" <> name -> 
+      # "%" <> name ->
       #   name = String.strip(name)
       #   _id_and_class_shortcuts(t, struct(tag, name: String.to_atom(name)))
 
-      contents -> 
+      contents ->
         {contents, attrs}
     end
   end
@@ -41,9 +41,9 @@ defmodule Xain.Helpers do
 
   defp merge_id_or_class(:class, item, attrs) do
     case Keyword.get(attrs, :class, "") do
-      "" -> 
+      "" ->
         Keyword.put(attrs, :class, item)
-      other -> 
+      other ->
         Keyword.put(attrs, :class, other <> " " <> item)
     end
   end

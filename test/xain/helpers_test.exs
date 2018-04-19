@@ -17,7 +17,7 @@ defmodule Xain.HelpersTest do
     attrs = [class: "cls"]
     assert id_and_class_shortcuts("test", attrs) == {"test", attrs}
   end
-  
+
   test "id_and_class_shortcuts #id" do
     assert id_and_class_shortcuts("#test", []) == {"", [id: "test"]}
   end
@@ -58,7 +58,7 @@ defmodule Xain.HelpersTest do
 
   test "ensure_valid_contents raises error if String.Chars is not implemented for the first argument" do
     assert capture_log(fn ->
-      assert_raise Protocol.UndefinedError, "protocol String.Chars not implemented for %{}", fn ->
+      assert_raise Protocol.UndefinedError, "protocol String.Chars not implemented for %{}. This protocol is implemented for: Atom, BitString, Date, DateTime, Float, Integer, List, NaiveDateTime, Time, URI, Version, Version.Requirement", fn ->
         ensure_valid_contents(%{}, :p)
       end
     end) =~ @log_msg

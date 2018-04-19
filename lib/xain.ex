@@ -123,7 +123,7 @@ defmodule Xain do
   defp merge_attrs(content, attrs, tag_name) do
     attrs = attrs |> set_defaults(tag_name)
     {content, attrs} = id_and_class_shortcuts(content, attrs)
-    attrs_html = for {key, val} <- attrs, into: "", do: " #{key}=#{quote_symbol}#{val}#{quote_symbol}"
+    attrs_html = for {key, val} <- attrs, into: "", do: " #{key}=#{quote_symbol()}#{val}#{quote_symbol()}"
     {content, attrs_html}
   end
 
