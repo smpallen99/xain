@@ -5,12 +5,12 @@ defmodule Xain.HelpersTest do
 
 
   test "id_and_class_shortcuts empty contents and attrs" do
-    assert id_and_class_shortcuts("", []) == {"", []}
+    assert id_and_class_shortcuts("", []) == {nil, []}
   end
 
   test "id_and_class_shortcuts empty contents and some attrs" do
     attrs = [class: "cls"]
-    assert id_and_class_shortcuts("", attrs) == {"", attrs}
+    assert id_and_class_shortcuts("", attrs) == {nil, attrs}
   end
 
   test "id_and_class_shortcuts some contents and some attrs" do
@@ -19,7 +19,7 @@ defmodule Xain.HelpersTest do
   end
 
   test "id_and_class_shortcuts #id" do
-    assert id_and_class_shortcuts("#test", []) == {"", [id: "test"]}
+    assert id_and_class_shortcuts("#test", []) == {nil, [id: "test"]}
   end
 
   test "id_and_class_shortcuts doesn't broke multilines" do

@@ -1,7 +1,7 @@
 defmodule Xain.Helpers do
   require Logger
 
-  def ensure_valid_contents(contents, _) when is_binary(contents) or is_list(contents) do
+  def ensure_valid_contents(contents, _) when is_binary(contents) or is_list(contents) or is_nil(contents) do
     contents
   end
   def ensure_valid_contents(contents, tag_name) do
@@ -12,9 +12,11 @@ defmodule Xain.Helpers do
   def id_and_class_shortcuts(contents, attrs) when is_binary(contents) do
     tokenize(contents) |> _id_and_class_shortcuts(attrs)
   end
-  def id_and_class_shortcuts(attrs, _) when is_list(attrs), do: {"", attrs}
+  def id_and_class_shortcuts(attrs, _) when is_list(attrs), do: {nil, attrs}
 
-  defp _id_and_class_shortcuts([], attrs), do: {"", attrs}
+  def id_and_class_shortcuts(nil, attrs), do: {nil, attrs}
+
+  defp _id_and_class_shortcuts([], attrs), do: {nil, attrs}
 
   defp _id_and_class_shortcuts([h | t], attrs) do
     case h do
@@ -40,8 +42,8 @@ defmodule Xain.Helpers do
   end
 
   defp merge_id_or_class(:class, item, attrs) do
-    case Keyword.get(attrs, :class, "") do
-      "" ->
+    case Keyword.get(attrs, :class, nil) do
+      nil ->
         Keyword.put(attrs, :class, item)
       other ->
         Keyword.put(attrs, :class, other <> " " <> item)
@@ -52,7 +54,6 @@ defmodule Xain.Helpers do
   @rest         ~S/(.+)/
 
   @regex        ~r/(?:#{@tag_class_id}|#{@rest})\s*/s
-
 
   defp tokenize(string) do
     Regex.scan(@regex, string, trim: true) |> reduce

@@ -55,30 +55,6 @@ Will Render:
 
 ## Configuration
 
-### Add a call back to transform the returned html
-
-i.e. Phoenix raw
-
-Add the following to your project's config file
-
-```Elixir
-config :xain, :after_callback, {Phoenix.HTML, :raw}
-```
-
-```Elixir
-  markup safe: true do
-    div ("#my-id.my-class") do
-      span ".bold Testing"
-    end
-  end
-```
-
-Will render the above as:
-
-```Elixir
-{safe, "<div id='my-id' class='my-class'><span class='bold'>Testing</span></div>"}
-```
-
 ### Change attribute quoting
 
 To have return markup attributes use single quotes instead of the

@@ -1,6 +1,9 @@
 defmodule Xain do
   require Logger
   import Xain.Helpers
+  import Phoenix.HTML, except: [raw: 1]
+
+  defdelegate raw(value), to: Phoenix.HTML
 
   defmacro __using__(opts) do
     except = Keyword.get opts, :except, []
@@ -37,20 +40,20 @@ defmodule Xain do
   @html5_elements [ :p ] ++ @auto_build_elements
 
   for tag <- @html5_elements -- @self_closing_elements do
-    defmacro unquote(tag)(contents \\ "", attrs \\ nil, inner \\ nil) do
+    defmacro unquote(tag)(contents \\ nil, attrs \\ nil, inner \\ nil) do
       tag = unquote(tag)
       quote location: :keep, do: tag(unquote(tag), unquote(contents), unquote(attrs), unquote(inner), false)
     end
   end
 
   for tag <- @self_closing_elements do
-    defmacro unquote(tag)(contents \\ "", attrs \\ nil, inner \\ nil) do
+    defmacro unquote(tag)(contents \\ nil, attrs \\ nil, inner \\ nil) do
       tag = unquote(tag)
       quote location: :keep, do: tag(unquote(tag), unquote(contents), unquote(attrs), unquote(inner), true)
     end
   end
 
-  defmacro tag(name, inline_content \\ "", attrs \\ nil, inner_block \\ nil, sc \\ false) do
+  defmacro tag(name, inline_content \\ nil, attrs \\ nil, inner_block \\ nil, sc \\ false) do
     {inline_content, attrs, inner_content} = prepare_args(inline_content, attrs, inner_block)
     inner_content = join_lines(inner_content)
 
@@ -59,7 +62,7 @@ defmodule Xain do
     end
   end
 
-  defp prepare_args([do: inner_content], nil, nil), do: {"", [], inner_content}
+  defp prepare_args([do: inner_content], nil, nil), do: {nil, [], inner_content}
   defp prepare_args(content, [do: inner_content], nil), do: {content, [], inner_content}
   defp prepare_args(content, attrs, [do: inner_content]), do: {content, attrs, inner_content}
   defp prepare_args(content, attrs, nil), do: {content, attrs || [], []}
@@ -79,16 +82,18 @@ defmodule Xain do
     |> Enum.filter(&(&1))
     |> Enum.reverse
     |> Enum.join
+    |> raw
   end
 
+  defp item_to_string({:safe, _} = item), do: safe_to_string(item)
   defp item_to_string(item) when is_list(item) do
-    item |> Enum.map(&item_to_string/1) |> Enum.filter(&(&1)) |> Enum.join
+    item |> Enum.map(&item_to_string/1) |> Enum.filter(&(&1)) |> Enum.join |> raw |> item_to_string
   end
   defp item_to_string(item) when is_binary(item) do
-    item
+    item |> html_escape() |> item_to_string
   end
   defp item_to_string(_) do
-    false
+    nil |> html_escape() |> item_to_string
   end
 
   defp handle_inner_list(list, acc \\ [])
@@ -117,30 +122,45 @@ defmodule Xain do
     |> merge_attrs(attrs, name)
     |> merge_content(inner)
     |> wrap_in_tags(name, sc)
+    |> raw
   end
 
 
   defp merge_attrs(content, attrs, tag_name) do
     attrs = attrs |> set_defaults(tag_name)
     {content, attrs} = id_and_class_shortcuts(content, attrs)
-    attrs_html = for {key, val} <- attrs, into: "", do: " #{key}=#{quote_symbol()}#{val}#{quote_symbol()}"
+    attrs_html = for {key, val} <- attrs, into: "" do
+      safe_key = key |> html_escape |> safe_to_string
+      safe_val = val |> html_escape |> safe_to_string
+      " #{safe_key}=#{quote_symbol()}#{safe_val}#{quote_symbol()}"
+    end
     {content, attrs_html}
   end
 
-  defp merge_content({inline_content, attrs_html}, inner) do
-    inner_content = cond do
-      is_list(inner) -> Enum.join(inner)
-      is_binary(inner) -> inner
-      true -> ""
-    end
-    {inline_content <> inner_content, attrs_html}
+  defp merge_content({inline_content, attrs_html}, {:safe, _} = inner) do
+    {safe_to_string(html_escape(inline_content)) <> safe_to_string(html_escape(inner)), attrs_html}
+  end
+  defp merge_content({inline_content, attrs_html}, inner) when is_list(inner) do
+    inner = inner |> List.flatten |> Enum.reject(&is_nil(&1)) |> Enum.map(&safe_to_string(&1)) |> Enum.join() |> raw()
+    merge_content({inline_content, attrs_html}, inner)
+  end
+  defp merge_content({inline_content, attrs_html}, "") do
+    merge_content({inline_content, attrs_html}, html_escape(nil))
+  end
+  defp merge_content({inline_content, attrs_html}, inner) when is_binary(inner) or is_nil(inner) do
+    merge_content({inline_content, attrs_html}, html_escape(inner))
+  end
+  defp merge_content({inline_content, attrs_html}, _)  do
+    merge_content({inline_content, attrs_html}, html_escape(nil))
   end
 
   defp wrap_in_tags({_content, attrs_html}, name, true) do
-    "<#{name}#{attrs_html}/>"
+    safe_name = name |> html_escape |> safe_to_string
+    "<#{safe_name}#{attrs_html}/>"
   end
   defp wrap_in_tags({content, attrs_html}, name, false) do
-    "<#{name}#{attrs_html}>#{content}</#{name}>"
+    safe_name = name |> html_escape |> safe_to_string
+    "<#{safe_name}#{attrs_html}>#{content}</#{safe_name}>"
   end
 
 
@@ -159,38 +179,18 @@ defmodule Xain do
       opts = unquote(opts)
 
       result = try do
-        unquote(block)
+        Phoenix.HTML.html_escape(unquote(block))
       rescue
         exception ->
           Logger.error inspect(exception)
           Logger.error inspect(System.stacktrace)
           reraise exception, System.stacktrace
       end
-      if opts[:safe] do
-        case Application.get_env :xain, :after_callback do
-          nil ->
-            result
-          {mod, fun} ->
-            apply mod, fun, [result]
-        end
-      else
-        result
-      end
     end
   end
 
   defmacro text(string) do
     quote do: to_string(unquote(string))
-  end
-
-  defmacro raw(string) do
-    quote do
-      str = case unquote(string) do
-        string when is_binary(string) -> string
-        {:safe, list} -> List.to_string list
-        other -> to_string other
-      end
-    end
   end
 
   defp get_defaults(name) do
