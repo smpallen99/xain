@@ -75,4 +75,4 @@ This work was inspired by Chris McCord's book ["Metaprogramming Elixir"](https:/
 
 ## License
 
-xain is Copyright (c) 2015-2016 E-MetroTel
+xain is Copyright (c) 2015-2018 E-MetroTel
