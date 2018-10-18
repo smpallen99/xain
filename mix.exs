@@ -1,18 +1,19 @@
 defmodule Xain.Mixfile do
   use Mix.Project
 
-  @version "0.6.1"
+  @version "0.6.2"
 
   def project do
-    [app: :xain,
-     version: @version,
-     elixir: "~> 1.0",
-     package: package(),
-     deps: [{:phoenix_html, "~> 2.12"}],
-     description: """
-     An html DSL package.
-     """
-   ]
+    [
+      app: :xain,
+      version: @version,
+      elixir: "~> 1.0",
+      package: package(),
+      deps: [{:phoenix_html, "~> 2.12"}],
+      description: """
+      An html DSL package.
+      """
+    ]
   end
 
   def application do
@@ -20,9 +21,11 @@ defmodule Xain.Mixfile do
   end
 
   defp package do
-    [ maintainers: ["Stephen Pallen", "Roman Smirnov"],
+    [
+      maintainers: ["Stephen Pallen", "Roman Smirnov"],
       licenses: ["MIT"],
-      links: %{ "Github" => "https://github.com/smpallen99/xain"},
-      files: ~w(lib README.md mix.exs LICENSE)]
+      links: %{"Github" => "https://github.com/smpallen99/xain"},
+      files: ~w(lib README.md mix.exs LICENSE)
+    ]
   end
 end
